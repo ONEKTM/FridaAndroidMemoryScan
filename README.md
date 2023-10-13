@@ -1,0 +1,2 @@
+# FridaAndroidMemoryScan
+使用frida在Android内存中扫描目标内容
