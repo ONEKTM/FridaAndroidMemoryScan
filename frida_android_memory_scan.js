@@ -1,7 +1,11 @@
 /* 
 Usage:
-    1.Modify the value of the pattern variable as the search target
-    2.frida -U -f [packageName] -l frida_android_memory_scan.js --no-pause
+    1.Modify the value of the pattern variable as the search target, the current default value is "7f 45 4c 46"
+    2.frida -U -p [pid] -l frida_android_memory_scan.js
+      or 
+      frida -U -f [packageName] -l frida_android_memory_scan.js --no-pause
+
+    notes: If there is an error, please try to enter %reload
 */
 
 function memscan() {
@@ -26,7 +30,8 @@ function memscan() {
         var filePtr = fopenFun(Memory.allocUtf8String(mapsPath), Memory.allocUtf8String("r"));
         const buffer = Memory.alloc(1024);
         const content = Memory.alloc(1024);
-        var num = 0;
+        var total = 0;
+        var hit = 0;
 
         while(!fgetsFun(buffer, 1024, filePtr).isNull()) {
             const start = Memory.alloc(8);
@@ -66,15 +71,16 @@ function memscan() {
                     // Memory.protect(start.readPointer().add(i*pagecheck), pagecheck, range.protection);
                     var scanSync = Memory.scanSync(start.readPointer().add(i*pagecheck), pagecheck, pattern);
                     if (scanSync.length > 0) {
+                        hit += scanSync.length;
                         console.log("#内存扫描到结果:" + JSON.stringify(scanSync) + "\n*地址所在段信息:\n", buffer.readUtf8String());
                     }
                 }
 
-                num++;
+                total++;
             }
         }
 
-        console.log("扫描结束。。。。。。。。。。。。。。。。。 共扫描可读项:" + num);
+        console.log("扫描结束。。。。。。。。。。。。。。。。。 共扫描可读段:[" + total + "], 匹配到目标:[" + hit + "]项");
         fcloseFun(filePtr);
 
     });
